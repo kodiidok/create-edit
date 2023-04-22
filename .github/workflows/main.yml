@@ -1,0 +1,68 @@
+
+# name: Build and Deploy create-edit Microservice
+
+# on:
+#   push:
+#     branches:
+#       - main
+
+# env:
+#   PROJECT_ID: ${{ secrets.GKE_PROJECT_ID }}
+#   GKE_CLUSTER: cluster-1    # Add your cluster name here.
+#   GKE_ZONE: us-central1-c   # Add your cluster zone here.
+#   DEPLOYMENT_NAME: nodeapp # Add your deployment name here.
+#   IMAGE: nodeapp
+#   DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+#   DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+
+# jobs:
+#   setup-build-publish-deploy:
+#     name: Setup, Build, Publish, and Deploy
+#     runs-on: ubuntu-latest
+
+#     steps:
+#     - name: Checkout
+#       uses: actions/checkout@v3
+
+#     Set up the gcloud CLI and authenticate with GCP
+#     - name: Setup Google Cloud CLI
+#       uses: GoogleCloudPlatform/github-actions/setup-gcloud@0.1.3
+#       env:
+#         ACTIONS_ALLOW_UNSECURE_COMMANDS: true
+#       with:
+#         service_account_key: ${{ secrets.GKE_SERVICE_ACCOUNT_KEY }}
+#         project_id: ${{ secrets.GKE_PROJECT_ID }}
+
+#     Configure Docker to use the gcloud command-line tool as a credential
+#     helper for authentication
+#     - run: |-
+#         gcloud auth configure-docker gcr.io
+
+#     Build the Docker image
+#     - name: Build
+#       run: |-
+#         docker build --no-cache \
+#           --tag gcr.io/${{ secrets.GKE_PROJECT_ID }}/create-edit:${{ github.sha }} .
+
+#     Push the Docker image to gcr
+#     - name: Push
+#       run: |-
+#         docker push gcr.io/${{ secrets.GKE_PROJECT_ID }}/create-edit:${{ github.sha }}
+
+#     Configure kubectl
+#     - name: Configure kubectl
+#       run: |-
+#         gcloud container clusters get-credentials ${{ env.GKE_CLUSTER }} --zone ${{ env.GKE_ZONE }}
+
+#     Deploy the Docker image to the GKE cluster
+#     - name: Deploy
+#       run: |-
+#         gcloud components install gke-gcloud-auth-plugin
+#         kubectl apply -f ${{ github.workspace }}/.github/manifests/deployment.yml
+#         kubectl apply -f ${{ github.workspace }}/.github/manifests/service.yml
+
+#     Rollout Deployment
+#     - name: Rollout Deployment Status
+#       run: |-
+#         kubectl rollout status deployment/create-edit
+#         kubectl get services -o wide
